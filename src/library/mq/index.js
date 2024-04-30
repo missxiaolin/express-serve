@@ -1,11 +1,16 @@
 import amqp from 'amqplib'
-import mqConfig from '../../config/mq'
+import dotenv from "dotenv";
+const appConfig = dotenv.config().parsed;
 
 
 export default class RabbitMq {
     constructor() {
-        this.hosts = mqConfig.hosts;
-        this.index = mqConfig.index;
+        
+        if (appConfig.RABBIT_MQ_IS_OPEN == 0) {
+            return
+        }
+        this.hosts = JSON.parse(appConfig.RABBIT_MQ_HOSTS);
+        this.index = appConfig.RABBIT_MQ_INDEX;
         this.length = this.hosts.length;
         this.open = amqp.connect(this.hosts[this.index]);
     }
@@ -19,7 +24,7 @@ export default class RabbitMq {
      */
     sendQueueMsg(queueName, msg, successCallback, errorCallBack) {
         let self = this;
-        self.open
+        return self.open
             .then(function (conn) {
                 return conn.createChannel()
             })
@@ -34,7 +39,7 @@ export default class RabbitMq {
                         channel.close()
                     }
                 }).catch(function (e) {
-                    errorCallBack ** errorCallBack(e)
+                    typeof errorCallBack === "function" && errorCallBack(e)
                     setTimeout(() => {
                         if (channel) {
                             channel.close()
